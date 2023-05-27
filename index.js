@@ -1,12 +1,12 @@
 
 const express = require('express');
-const app = express() ; 
-const port = process.env.PORT || 6000 ; 
+const app = express();
+const port = process.env.PORT || 2300;
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
 
 app.use(cors());
-app.use(express.json()); 
+app.use(express.json());
 require('dotenv').config();
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.ddq9cat.mongodb.net/?retryWrites=true&w=majority`;
@@ -16,25 +16,39 @@ const client = new MongoClient(uri);
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-         client.connect();
+        client.connect();
 
         const productCollection = client.db("Photographer_portfolio").collection('Product');
 
         // --- getting all products
-        app.get('/product', async(req, res)=>{
-            const query = {} ; 
+        app.get('/product', async (req, res) => {
+            const query = {};
             const cursor = productCollection.find(query);
             const result = await cursor.toArray();
-            res.send(result) ; 
-        })
-        app.get('/productTesting', async(req, res)=>{
-            const query = {} ; 
-            const cursor = productCollection.find(query);
-            const result = await cursor.toArray();
-            res.send(result) ; 
+            res.send(result);
         })
 
-        
+
+        // --- getting product by catagory 
+        app.post('/product/category/:category', async (req, res) => {
+            const { category } = req.params;
+            if (category !== 'all') {
+                const query = { catagory: category };
+                const cursor = productCollection.find(query);
+                const result = await cursor.toArray();
+                const count = await productCollection.estimatedDocumentCount();
+                res.send({ count, result });
+            }else{
+                const query = {};
+                const cursor = productCollection.find(query);
+                const result = await cursor.toArray();
+                const count = await productCollection.estimatedDocumentCount();
+                res.send({ count, result });
+            }
+
+        })
+
+
 
     } finally {
         //   await client.close();
@@ -43,12 +57,11 @@ async function run() {
 run().catch(console.dir);
 
 
-app.get('/', (req, res)=>{
-    res.send('Hello photographer') ; 
+app.get('/', (req, res) => {
+    res.send('Hello photographer');
 })
 
 
-app.listen(port, ()=>{
-    console.log('Listening to port');
-    console.log(process.env.DB_USER , process.env.DB_PASSWORD)
+app.listen(port, () => {
+    console.log('Listening to port', port);
 })
