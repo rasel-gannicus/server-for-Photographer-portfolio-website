@@ -31,21 +31,23 @@ async function run() {
 
         // --- getting product by catagory 
         app.post('/product/category/:category', async (req, res) => {
-            const { category } = req.params;
+            const{category} = req.params;
+            const {currentPage, size} = req.query;
+            
             if (category !== 'all') {
                 const query = { catagory: category };
                 const cursor = productCollection.find(query);
-                const result = await cursor.toArray();
-                const count = await productCollection.estimatedDocumentCount();
+                const result = await cursor.skip(parseInt(currentPage*size)).limit(parseInt(size)).toArray();
+                // const count = await productCollection.estimatedDocumentCount();
+                const count = result.length;
                 res.send({ count, result });
             }else{
                 const query = {};
                 const cursor = productCollection.find(query);
-                const result = await cursor.toArray();
+                const result = await cursor.skip(parseInt(currentPage*size)).limit(parseInt(size)).toArray();
                 const count = await productCollection.estimatedDocumentCount();
                 res.send({ count, result });
             }
-
         })
 
 
