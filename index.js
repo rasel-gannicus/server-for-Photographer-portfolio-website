@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 2300;
 const cors = require('cors');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 
 app.use(cors());
 app.use(express.json());
@@ -19,13 +19,21 @@ async function run() {
         client.connect();
 
         const productCollection = client.db("Photographer_portfolio").collection('Product');
+        const serviceCartCollection = client.db("Photographer_portfolio").collection('Service_cart');
 
         // --- getting all products
         app.get('/product', async (req, res) => {
+            const { amount } = req.query;
+            // console.log(amount);
             const query = {};
             const cursor = productCollection.find(query);
-            const result = await cursor.toArray();
-            res.send(result);
+            if (amount > 0) {
+                const result = await cursor.limit(parseInt(amount)).toArray();
+                res.send(result);
+            }else{
+                const result = await cursor.toArray();
+                res.send(result);
+            }
         })
 
 
@@ -49,6 +57,31 @@ async function run() {
             }
         })
 
+
+
+        // --- adding a service to cart
+        app.put('/services/add', async(req, res)=>{
+            // console.log(req.body);
+            const filter = {email: req.body.email, serviceId : req.body.serviceId} ;
+            const options = {upsert : true} ; 
+            const update = {$set : req.body};
+            const result = await serviceCartCollection.updateOne(filter, update, options);
+            res.send(result);
+        })
+        // --- getting service cart
+        app.get('/cart/services/:email', async(req, res)=>{
+            
+            const query = {email : req.params.email} ; 
+            const cursor = serviceCartCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+        // --- deleting a booking from cart
+        app.delete('/cart/service/delete/:id', async(req, res)=>{
+            const query = {_id : new ObjectId(req.params.id)};
+            const result = await serviceCartCollection.deleteOne(query);
+            res.send(result);
+        })
 
 
     } finally {
