@@ -68,6 +68,21 @@ async function run() {
             const result = await serviceCartCollection.updateOne(filter, update, options);
             res.send(result);
         })
+
+        // --- update a bookings when user confirms it
+        app.patch('/services/update', async(req, res)=>{
+            // console.log(req.body);
+            const filter = {email: req.body.email, serviceId : req.body.serviceId};
+            const update = {
+                $set : {
+                    status : req.body.status,
+                    time : req.body.time,
+                    date : req.body.date
+                }
+            }
+            const result = await serviceCartCollection.updateOne(filter, update);
+            res.send(result);
+        })
         // --- getting service cart
         app.get('/cart/services/:email', async(req, res)=>{
             
@@ -83,6 +98,14 @@ async function run() {
             res.send(result);
         })
 
+        // --- getting all confirmed cart
+        app.get('/cart/confirmedOnly/:date', async(req, res)=>{
+            console.log(req.params.date);
+            const query = {status : 'confirmed', date : req.params.date};
+            const cursor = serviceCartCollection.find(query) ; 
+            const result = await cursor.toArray();
+            res.send(result);
+        })
 
     } finally {
         //   await client.close();
