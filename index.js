@@ -92,19 +92,20 @@ async function run() {
             res.send(result);
         })
         // --- deleting a booking from cart
-        app.delete('/cart/service/delete/:id', async(req, res)=>{
-            const query = {_id : new ObjectId(req.params.id)};
+        app.delete('/cart/service/delete', async(req, res)=>{
+            const {id, email} =  req.body;
+            const query = {_id : new ObjectId(id)};
             const result = await serviceCartCollection.deleteOne(query);
             res.send(result);
         })
 
         // --- getting all confirmed cart
-        app.get('/cart/confirmedOnly/:date', async(req, res)=>{
-            console.log(req.params.date);
-            const query = {status : 'confirmed', date : req.params.date};
+        app.get('/cart/confirmedOnly', async(req, res)=>{
+            const query = {status : 'confirmed'};
             const cursor = serviceCartCollection.find(query) ; 
             const result = await cursor.toArray();
             res.send(result);
+            // console.log(result);
         })
 
     } finally {
