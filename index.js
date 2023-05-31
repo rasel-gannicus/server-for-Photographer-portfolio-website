@@ -1,7 +1,7 @@
 
 const express = require('express');
 const app = express();
-const port =  2300;
+const port = 2300;
 const cors = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
 
@@ -20,6 +20,7 @@ async function run() {
 
         const productCollection = client.db("Photographer_portfolio").collection('Product');
         const serviceCartCollection = client.db("Photographer_portfolio").collection('Service_cart');
+        const productCartCollection = client.db("Photographer_portfolio").collection('Product_cart');
 
         // --- getting all products
         app.get('/product', async (req, res) => {
@@ -30,7 +31,7 @@ async function run() {
             if (amount > 0) {
                 const result = await cursor.limit(parseInt(amount)).toArray();
                 res.send(result);
-            }else{
+            } else {
                 const result = await cursor.toArray();
                 res.send(result);
             }
@@ -60,52 +61,76 @@ async function run() {
 
 
         // --- adding a service to cart
-        app.put('/services/add', async(req, res)=>{
+        app.put('/services/add', async (req, res) => {
             // console.log(req.body);
-            const filter = {email: req.body.email, serviceId : req.body.serviceId} ;
-            const options = {upsert : true} ; 
-            const update = {$set : req.body};
+            const filter = { email: req.body.email, serviceId: req.body.serviceId };
+            const options = { upsert: true };
+            const update = { $set: req.body };
             const result = await serviceCartCollection.updateOne(filter, update, options);
             res.send(result);
         })
 
         // --- update a bookings when user confirms it
-        app.patch('/services/update', async(req, res)=>{
-            // console.log(req.body);
-            const filter = {email: req.body.email, serviceId : req.body.serviceId};
+        app.patch('/services/update', async (req, res) => {
+            const filter = { email: req.body.email, serviceId: req.body.serviceId };
             const update = {
-                $set : {
-                    status : req.body.status,
-                    time : req.body.time,
-                    date : req.body.date
+                $set: {
+                    status: req.body.status,
+                    time: req.body.time,
+                    date: req.body.date
                 }
             }
             const result = await serviceCartCollection.updateOne(filter, update);
             res.send(result);
         })
         // --- getting service cart
-        app.get('/cart/services/:email', async(req, res)=>{
-            
-            const query = {email : req.params.email} ; 
+        app.get('/cart/services/:email', async (req, res) => {
+
+            const query = { email: req.params.email };
             const cursor = serviceCartCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
         // --- deleting a booking from cart
-        app.delete('/cart/service/delete', async(req, res)=>{
-            const {id, email} =  req.body;
-            const query = {_id : new ObjectId(id)};
+        app.delete('/cart/service/delete', async (req, res) => {
+            const { id, email } = req.body;
+            const query = { _id: new ObjectId(id) };
             const result = await serviceCartCollection.deleteOne(query);
             res.send(result);
         })
 
         // --- getting all confirmed cart
-        app.get('/cart/confirmedOnly', async(req, res)=>{
-            const query = {status : 'confirmed'};
-            const cursor = serviceCartCollection.find(query) ; 
+        app.get('/cart/confirmedOnly', async (req, res) => {
+            const query = { status: 'confirmed' };
+            const cursor = serviceCartCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
             // console.log(result);
+        })
+
+        /* ---------------------------------------------
+                 Product Cart Related
+        ------------------------------------------------ */
+        // --- add a product to cart
+        app.post('/cart/addProduct', async(req, res)=>{
+            const{data} = req.body ; 
+            const result = await productCartCollection.insertOne(data);
+            res.send(result);
+        })
+
+        // --- getting all product cart info from database
+        app.get('/cart/getAllProduct', async(req, res)=>{
+            const query = {};
+            const cursor = productCartCollection.find(query);
+            const result = await cursor.toArray(); 
+            res.send(result) ; 
+        })
+
+        // --- getting a single product info from cart
+        app.get('/cart/singleProduct', async(req, res)=>{
+            const filter = {email : req.query.email, 'product._id': req.query.id};
+            const result = await productCartCollection.findOne(filter);
+            res.send(result) ; 
         })
 
     } finally {
