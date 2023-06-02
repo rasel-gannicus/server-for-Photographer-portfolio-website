@@ -25,7 +25,6 @@ async function run() {
         // --- getting all products
         app.get('/product', async (req, res) => {
             const { amount } = req.query;
-            // console.log(amount);
             const query = {};
             const cursor = productCollection.find(query);
             if (amount > 0) {
@@ -62,7 +61,7 @@ async function run() {
 
         // --- adding a service to cart
         app.put('/services/add', async (req, res) => {
-            // console.log(req.body);
+            
             const filter = { email: req.body.email, serviceId: req.body.serviceId };
             const options = { upsert: true };
             const update = { $set: req.body };
@@ -105,7 +104,6 @@ async function run() {
             const cursor = serviceCartCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
-            // console.log(result);
         })
 
         /* ---------------------------------------------
@@ -131,6 +129,27 @@ async function run() {
             const filter = {email : req.query.email, 'product._id': req.query.id};
             const result = await productCartCollection.findOne(filter);
             res.send(result) ; 
+        })
+
+        // --- Getting all the cart product for individual user
+        app.get('/cart/user/:email', async(req, res)=>{
+            const {email} = req.params;
+            const filter = {email : email};
+            const cursor = productCartCollection.find(filter);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        // --- delete a product for a user
+        app.delete('/cart/user/delete', async(req, res)=>{
+            // console.log(req.query);
+            const filter = {email:req.query.email, _id: new ObjectId(req.query.id)};
+            const result = await productCartCollection.deleteOne(filter);
+            res.send(result);
+        })
+        // --- update cart 
+        app.patch('/cart/update',async(req, res)=>{
+            console.log(req.body);
         })
 
     } finally {
