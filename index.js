@@ -149,7 +149,20 @@ async function run() {
         })
         // --- update cart 
         app.patch('/cart/update',async(req, res)=>{
-            console.log(req.body);
+            // console.log(req.body);
+            const{quantity, pricePerUnit, email,id} = req.body ; 
+            const filter = {email : req.body.email, _id: new ObjectId(req.body.id)} ;
+            const subTotal = pricePerUnit * quantity;
+            console.log(quantity, pricePerUnit, email, id);
+            const update = {
+                $set : {
+                    quantity : req.body.quantity,
+                    pricePerUnit : req.body.pricePerUnit,
+                    subTotal : subTotal
+                }
+            } 
+            const result = await productCartCollection.updateOne(filter, update);
+            res.send(result);
         })
 
     } finally {
