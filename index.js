@@ -142,18 +142,15 @@ async function run() {
 
         // --- delete a product for a user
         app.delete('/cart/user/delete', async(req, res)=>{
-            // console.log(req.query);
             const filter = {email:req.query.email, _id: new ObjectId(req.query.id)};
             const result = await productCartCollection.deleteOne(filter);
             res.send(result);
         })
         // --- update cart 
         app.patch('/cart/update',async(req, res)=>{
-            // console.log(req.body);
             const{quantity, pricePerUnit, email,id} = req.body ; 
             const filter = {email : req.body.email, _id: new ObjectId(req.body.id)} ;
             const subTotal = pricePerUnit * quantity;
-            console.log(quantity, pricePerUnit, email, id);
             const update = {
                 $set : {
                     quantity : req.body.quantity,
