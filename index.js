@@ -4,6 +4,7 @@ const app = express();
 const port = 2300;
 const cors = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken') ; 
 
 app.use(cors());
 app.use(express.json());
@@ -21,6 +22,28 @@ async function run() {
         const productCollection = client.db("Photographer_portfolio").collection('Product');
         const serviceCartCollection = client.db("Photographer_portfolio").collection('Service_cart');
         const productCartCollection = client.db("Photographer_portfolio").collection('Product_cart');
+
+        // --- receive information from client side for jwt token
+        app.post('/jwt', (req, res)=>{
+            const user = req.body ;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn : '1h'});
+            res.send({token})
+        })
+
+        function verifyJWT(req, res, next){
+            const authHeader = req.headers.authorization ; 
+            if(!authHeader){
+                return res.status(401).send({message : 'Jwt Token is not verified'});
+            }
+            const token = authHeader.split(' ')[1];
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function(err, decoded){
+                if(err){
+                    return res.status(401).send({message : 'Jwt Token is not verified'});
+                }
+                req.decoded = decoded ;
+                next() ; 
+            })
+        }
 
         // --- getting all products
         app.get('/product', async (req, res) => {
@@ -60,7 +83,7 @@ async function run() {
 
 
         // --- adding a service to cart
-        app.put('/services/add', async (req, res) => {
+        app.put('/services/add', verifyJWT, async (req, res) => {
             
             const filter = { email: req.body.email, serviceId: req.body.serviceId };
             const options = { upsert: true };
@@ -70,7 +93,7 @@ async function run() {
         })
 
         // --- update a bookings when user confirms it
-        app.patch('/services/update', async (req, res) => {
+        app.patch('/services/update', verifyJWT, async (req, res) => {
             const filter = { email: req.body.email, serviceId: req.body.serviceId };
             const update = {
                 $set: {
@@ -83,7 +106,7 @@ async function run() {
             res.send(result);
         })
         // --- getting service cart
-        app.get('/cart/services/:email', async (req, res) => {
+        app.get('/cart/services/:email', verifyJWT, async (req, res) => {
 
             const query = { email: req.params.email };
             const cursor = serviceCartCollection.find(query);
@@ -91,7 +114,7 @@ async function run() {
             res.send(result);
         })
         // --- deleting a booking from cart
-        app.delete('/cart/service/delete', async (req, res) => {
+        app.delete('/cart/service/delete', verifyJWT, async (req, res) => {
             const { id, email } = req.body;
             const query = { _id: new ObjectId(id) };
             const result = await serviceCartCollection.deleteOne(query);
@@ -110,7 +133,7 @@ async function run() {
                  Product Cart Related
         ------------------------------------------------ */
         // --- add a product to cart
-        app.post('/cart/addProduct', async(req, res)=>{
+        app.post('/cart/addProduct', verifyJWT, async(req, res)=>{
             const{data} = req.body ; 
             const result = await productCartCollection.insertOne(data);
             res.send(result);
@@ -132,7 +155,7 @@ async function run() {
         })
 
         // --- Getting all the cart product for individual user
-        app.get('/cart/user/:email', async(req, res)=>{
+        app.get('/cart/user/:email', verifyJWT, async(req, res)=>{
             const {email} = req.params;
             const filter = {email : email};
             const cursor = productCartCollection.find(filter);
@@ -141,7 +164,7 @@ async function run() {
         })
 
         // --- delete a product for a user
-        app.delete('/cart/user/delete', async(req, res)=>{
+        app.delete('/cart/user/delete', verifyJWT, async(req, res)=>{
             const filter = {email:req.query.email, _id: new ObjectId(req.query.id)};
             const result = await productCartCollection.deleteOne(filter);
             res.send(result);
