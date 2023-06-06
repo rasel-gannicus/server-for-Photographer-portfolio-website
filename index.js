@@ -26,7 +26,7 @@ async function run() {
         // --- receive information from client side for jwt token
         app.post('/jwt', (req, res)=>{
             const user = req.body ;
-            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn : '1h'});
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn : '1d'});
             res.send({token})
         })
 
@@ -196,6 +196,13 @@ app.get('/', (req, res) => {
     res.send('Hello photographer');
 })
 
+// Enable CORS middleware
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000/');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+  });
 
 app.listen(port, () => {
     console.log('Listening to port', port);
