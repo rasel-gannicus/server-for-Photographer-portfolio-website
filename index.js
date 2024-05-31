@@ -73,6 +73,18 @@ async function run() {
       }
     });
 
+    // --- getting single products
+    app.get('/product/:productId', async(req, res) =>{
+        const params = req.params ;
+        const {productId} = params
+        
+        if(productId !== ''){
+            const query = {_id: new ObjectId(productId)}
+            const result = await productCollection.findOne(query);
+            res.send(result);
+        }
+    })
+
     // --- getting product by catagory
     app.post("/product/category/:category", async (req, res) => {
       const { category } = req.params;
